@@ -87,14 +87,13 @@ def mfloor(x):
     xf = np.array(_internal(x), dtype=x.dtype)
     return restore_input_form(xf, iform)
 
-def carray(x):
+def carray_try(x):
     """Check that x is an ndarray. If not, try to convert it to ndarray.
     """
     x = np.atleast_1d(x)
     return x
 
-
-def carray_fix(x):
+def carray(x):
     """Check that x is an ndarray. If not, try to convert it to ndarray.
     """
     if not isinstance(x, np.ndarray):
