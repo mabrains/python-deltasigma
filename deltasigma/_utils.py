@@ -19,7 +19,7 @@
 """
 
 import collections
-import fractions
+import collections.abc
 from fractions import Fraction as Fr
 import math
 
@@ -87,12 +87,19 @@ def mfloor(x):
     xf = np.array(_internal(x), dtype=x.dtype)
     return restore_input_form(xf, iform)
 
-
 def carray(x):
     """Check that x is an ndarray. If not, try to convert it to ndarray.
     """
+    x = np.atleast_1d(x)
+    return x
+
+
+def carray_fix(x):
+    """Check that x is an ndarray. If not, try to convert it to ndarray.
+    """
     if not isinstance(x, np.ndarray):
-        if not isinstance(x, collections.Iterable):
+        # CHANGE HERE: Use collections.abc.Iterable
+        if not isinstance(x, collections.abc.Iterable):
             x = np.array((x,))
         else:
             x = np.array(x)
