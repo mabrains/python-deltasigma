@@ -21,6 +21,7 @@
 import collections
 import fractions
 from fractions import Fraction as Fr
+import math
 
 import numpy as np
 from scipy.signal import lti, ss2tf, ss2zpk, zpk2tf
@@ -50,7 +51,7 @@ def rat(x, tol):
     return Fr(float(x)).limit_denominator(int(1 / float(tol))).numerator, \
         Fr(float(x)).limit_denominator(int(1 / float(tol))).denominator
 
-gcd = fractions.gcd
+gcd = math.gcd
 
 lcm = lambda a, b: int(a * b / float(gcd(a, b)))
 lcm.__doc__ = """Calculate the Least Common Multiple of ``a`` and ``b``.\n"""
