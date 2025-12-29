@@ -18,7 +18,6 @@
  that do not find a direct replacement in numpy/scipy.
 """
 
-import collections
 import collections.abc
 from fractions import Fraction as Fr
 import math
@@ -87,13 +86,13 @@ def mfloor(x):
     xf = np.array(_internal(x), dtype=x.dtype)
     return restore_input_form(xf, iform)
 
-def carray_try(x):
+def carray(x):
     """Check that x is an ndarray. If not, try to convert it to ndarray.
     """
     x = np.atleast_1d(x)
     return x
 
-def carray(x):
+def carray_fix(x):
     """Check that x is an ndarray. If not, try to convert it to ndarray.
     """
     if not isinstance(x, np.ndarray):
@@ -455,7 +454,7 @@ def _get_zpk(arg, input=0):
         z, p, k = sys.zeros, sys.poles, sys.gain
     elif _is_A_B_C_D(arg):
         z, p, k = ss2zpk(*arg, input=input)
-    elif isinstance(arg, collections.Iterable):
+    elif isinstance(arg, collections.abc.Iterable):
         ri = 0
         for i in arg:
             # Note we do not check if the user has assembled a list with
@@ -534,7 +533,7 @@ def _get_num_den(arg, input=0):
         num, den = zpk2tf(*arg)
     elif _is_A_B_C_D(arg):
         num, den = ss2tf(*arg, input=input)
-    elif isinstance(arg, collections.Iterable):
+    elif isinstance(arg, collections.abc.Iterable):
         ri = 0
         for i in arg:
             # Note we do not check if the user has assembled a list with
@@ -615,7 +614,7 @@ def _getABCD(arg):
     elif _is_zpk(arg) or _is_num_den(arg) or _is_A_B_C_D(arg):
         sys = lti(*arg)
         A, B, C, D = sys.A, sys.B, sys.C, sys.D
-    elif isinstance(arg, collections.Iterable):
+    elif isinstance(arg, collections.abc.Iterable):
         A, B, C, D = None, None, None, None
         for i in arg:
             # Note we do not check if the user has assembled a list with
@@ -644,27 +643,29 @@ def _getABCD(arg):
     return A, B, C, D
 
 
-def _is_zpk(arg):
-    """Can the argument be safely assumed to be a zpk tuple?"""
-    return isinstance(arg, collections.Iterable) and len(arg) == 3 and \
-        isinstance(arg[0], collections.Iterable) and \
-        isinstance(arg[1], collections.Iterable) and np.isscalar(arg[2])
-
-
 def _is_num_den(arg):
     """Can the argument be safely assumed to be a num, den tuple?"""
-    return isinstance(arg, collections.Iterable) and len(arg) == 2 and \
-        isinstance(arg[0], collections.Iterable) and \
-        isinstance(arg[1], collections.Iterable)
+    # FIX: Use collections.abc.Iterable
+    return isinstance(arg, collections.abc.Iterable) and len(arg) == 2 and \
+        isinstance(arg[0], collections.abc.Iterable) and \
+        isinstance(arg[1], collections.abc.Iterable)
+
+
+def _is_zpk(arg):
+    """Can the argument be safely assumed to be a zpk tuple?"""
+    return isinstance(arg, collections.abc.Iterable) and len(arg) == 3 and \
+        isinstance(arg[0], collections.abc.Iterable) and \
+        isinstance(arg[1], collections.abc.Iterable) and np.isscalar(arg[2])
 
 
 def _is_A_B_C_D(arg):
     """Can the argument be safely assumed to be an (A, B, C, D) tuple?"""
-    return isinstance(arg, collections.Iterable) and len(arg) == 4 and \
-        (isinstance(arg[0], collections.Iterable) or np.is_scalar(arg[0])) and \
-        (isinstance(arg[1], collections.Iterable) or np.is_scalar(arg[1])) and \
-        (isinstance(arg[2], collections.Iterable) or np.is_scalar(arg[2])) and \
-        (isinstance(arg[3], collections.Iterable) or np.is_scalar(arg[3]))
+    # FIX: Use collections.abc.Iterable and np.isscalar
+    return isinstance(arg, collections.abc.Iterable) and len(arg) == 4 and \
+        (isinstance(arg[0], collections.abc.Iterable) or np.isscalar(arg[0])) and \
+        (isinstance(arg[1], collections.abc.Iterable) or np.isscalar(arg[1])) and \
+        (isinstance(arg[2], collections.abc.Iterable) or np.isscalar(arg[2])) and \
+        (isinstance(arg[3], collections.abc.Iterable) or np.isscalar(arg[3]))
 
 
 def mround(x):
