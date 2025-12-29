@@ -21,7 +21,9 @@ import sys
 from warnings import warn
 
 import numpy as np
-from numpy.distutils.system_info import get_info
+
+# NOTE: numpy.distutils was removed in NumPy 2.0. 
+# We no longer import get_info.
 
 # should synthesizeNTF run the optimization routine?
 optimize_NTF = True
@@ -34,33 +36,49 @@ itn_limit = 500
 _debug = False
 
 # get blas information to compile the cython extensions
-blas_info = get_info("blas")
-if len(blas_info) == 0 and _debug:
-    warn("Numpy did not detect the BLAS library in the system")
-# Let's make an educated guess
+# Since NumPy 2.0 removed distutils, we manually search for cblas.h
+# in standard locations and the active Python environment.
+
+candidate_paths = []
+
+# 1. User Override (Environment Variable)
+if "BLAS_H" in os.environ:
+    candidate_paths.append(os.environ["BLAS_H"])
+
+# 2. Current Python Environment (Conda/Virtualenv)
+candidate_paths.append(os.path.join(sys.prefix, 'include'))
+if sys.platform == 'win32':
+    candidate_paths.append(os.path.join(sys.prefix, 'Library', 'include'))
+
+# 3. System Paths (Linux/Darwin)
 if 'linux' in sys.platform or 'darwin' in sys.platform:
-    guessed_include = '/usr/include'
-else:
-    guessed_include = None
-# wrap it up: numpy or user-set environment var or a lucky guess on our side is
-# needed to get the cblas.h header path. If not found, simulateDSM() will use
+    candidate_paths.append('/usr/include')
+    candidate_paths.append('/usr/local/include')
+
+# Find the first path that actually contains cblas.h
+found_blas_path = None
+for path in candidate_paths:
+    if path and os.path.isfile(os.path.join(path, 'cblas.h')):
+        found_blas_path = path
+        break
+
+if not found_blas_path and _debug:
+    warn("Could not detect cblas.h in standard system locations.")
+
+# wrap it up: user-set environment var or a lucky guess is needed 
+# to get the cblas.h header path. If not found, simulateDSM() will use
 # a CPython implementation (slower).
 setup_args = {"script_args":(["--compiler=mingw32"]
                              if sys.platform == 'win32' else [])}
+
 lib_include = [np.get_include()]
-if "include_dirs" not in blas_info and "BLAS_H" not in os.environ and \
-   'nt' not in os.name and (not guessed_include or \
-     not os.path.isfile(os.path.join(guessed_include, 'cblas.h'))):
+
+if found_blas_path:
+    lib_include.append(found_blas_path)
+elif 'nt' not in os.name:
+    # Only warn on non-Windows systems if we fail (consistent with original logic)
     warn("Cannot find the path for 'cblas.h'. You may set it using the environment variable "
-         "BLAS_H.\nNOTE: You need to pass the path to the directories were the "
+         "BLAS_H.\nNOTE: You need to pass the path to the directories where the "
          "header files are, not the path to the files.")
-else:
-    if "include_dirs" in blas_info:
-        lib_include = lib_include + blas_info.get("include_dirs")
-    elif "BLAS_H" in os.environ:
-        lib_include = lib_include + [os.environ["BLAS_H"]]
-    elif guessed_include:
-        lib_include = lib_include + [guessed_include]
-    else:
-        pass # we're on windows
-setup_args.update({"include_dirs":list(set(lib_include))})
+
+setup_args.update({"include_dirs": list(set(lib_include))})
