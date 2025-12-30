@@ -23,7 +23,7 @@ from fractions import Fraction as Fr
 import math
 
 import numpy as np
-from scipy.signal import lti, ss2tf, ss2zpk, zpk2tf
+from scipy.signal import lti, ss2tf, ss2zpk, zpk2tf, ZerosPolesGain
 
 from ._constants import eps
 from ._partitionABCD import partitionABCD
@@ -446,12 +446,14 @@ def _get_zpk(arg, input=0):
         A, B, C, D = partitionABCD(arg)
         z, p, k = ss2zpk(A, B, C, D, input=input)
     elif isinstance(arg, lti):
-        z, p, k = arg.zeros, arg.poles, arg.gain
+        sys_zpk = ZerosPolesGain(arg)
+        z, p, k = sys_zpk.zeros, sys_zpk.poles, sys_zpk.gain
     elif _is_zpk(arg):
         z, p, k = np.atleast_1d(arg[0]), np.atleast_1d(arg[1]), arg[2]
     elif _is_num_den(arg):
         sys = lti(*arg)
-        z, p, k = sys.zeros, sys.poles, sys.gain
+        sys_zpk = ZerosPolesGain(sys)
+        z, p, k = sys_zpk.zeros, sys_zpk.poles, sys_zpk.gain
     elif _is_A_B_C_D(arg):
         z, p, k = ss2zpk(*arg, input=input)
     elif isinstance(arg, collections.abc.Iterable):
